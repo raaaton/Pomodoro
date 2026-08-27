@@ -16,15 +16,29 @@ actor LiveActivityManager {
                 relevanceScore: 100
             )
 
-            if let activity = Activity<PomodoroActivityAttributes>.activities.first(where: {
+            let activities = Activity<PomodoroActivityAttributes>.activities
+
+            if let activity = activities.first(where: {
                 $0.attributes.sessionID == session.id
             }) {
                 await activity.update(content)
+
+                for staleActivity in activities where staleActivity.id != activity.id {
+                    await staleActivity.end(nil, dismissalPolicy: .immediate)
+                }
             } else {
                 await endAll()
                 guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
                 let attributes = PomodoroActivityAttributes(sessionID: session.id)
-                _ = try? Activity.request(attributes: attributes, content: content, pushType: nil)
+                do {
+                    _ = try Activity.request(
+                        attributes: attributes,
+                        content: content,
+                        pushType: nil
+                    )
+                } catch {
+                    print("Unable to start Pomodoro Live Activity: \(error)")
+                }
             }
         }
     }

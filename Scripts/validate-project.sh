@@ -79,6 +79,13 @@ fi
 grep -q 'NSSupportsLiveActivities' PomodoroApp/Info.plist
 grep -q 'com.apple.widgetkit-extension' PomodoroLiveActivity/Info.plist
 grep -q 'PomodoroLiveActivity.appex in Embed App Extensions' "$project"
+grep -q 'frame(width: 42, alignment: .trailing)' PomodoroLiveActivity/PomodoroLiveActivity.swift
+
+if grep -q 'fixedSize(horizontal: true' PomodoroLiveActivity/PomodoroLiveActivity.swift; then
+    echo "Live Activity timer views must not request unbounded horizontal size." >&2
+    exit 1
+fi
+
 grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 27.0' "$project"
 grep -q 'BlueprintName="Pomodoro"' "$scheme"
 grep -q 'workflow_dispatch:' .github/workflows/release.yml
