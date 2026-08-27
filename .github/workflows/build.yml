@@ -74,18 +74,26 @@ jobs:
             clean build
 
       - name: Package unsigned IPA
+        id: package
         if: github.event_name != 'pull_request'
         run: |
-          short_sha="${GITHUB_SHA:0:7}"
+          set -euo pipefail
+          app="DeviceDerivedData/Build/Products/Release-iphoneos/Pomodoro.app"
+          version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Built app version is not X.X.X: $version" >&2
+            exit 1
+          fi
           ./Scripts/package-unsigned-ipa.sh \
-            DeviceDerivedData/Build/Products/Release-iphoneos/Pomodoro.app \
-            "Artifacts/Pomodoro-main-${short_sha}-unsigned.ipa"
+            "$app" \
+            "Artifacts/Pomodoro-${version}.ipa"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Upload unsigned IPA
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v7
         with:
-          name: Pomodoro-main-${{ github.sha }}-unsigned
+          name: Pomodoro-${{ steps.package.outputs.version }}
           path: Artifacts/*.ipa
           if-no-files-found: error
           retention-days: 14

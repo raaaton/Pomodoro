@@ -12,38 +12,64 @@ struct PomodoroLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label(
-                        context.state.interval.title,
-                        systemImage: context.state.interval.systemImage
-                    )
-                    .font(.headline)
+                    HStack(spacing: 6) {
+                        Image(systemName: context.state.interval.systemImage)
+                            .symbolRenderingMode(.hierarchical)
+                        Text(context.state.interval.title)
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text("\(context.state.workNumber) of \(context.state.workTarget)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
+                    RemainingTimeView(
+                        state: context.state,
+                        font: .system(size: 28, weight: .semibold, design: .rounded)
+                    )
+                    .fixedSize(horizontal: true, vertical: false)
                 }
 
-                DynamicIslandExpandedRegion(.center) {
-                    VStack(spacing: 10) {
-                        RemainingTimeView(state: context.state, font: .system(size: 38, weight: .light, design: .rounded))
+                DynamicIslandExpandedRegion(.bottom) {
+                    VStack(spacing: 8) {
                         ActivityProgressView(state: context.state)
+
+                        HStack(spacing: 8) {
+                            Text("Interval \(context.state.workNumber) of \(context.state.workTarget)")
+                                .monospacedDigit()
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+
+                            Spacer(minLength: 8)
+
+                            if context.state.status == .paused {
+                                Label("Paused", systemImage: "pause.fill")
+                                    .lineLimit(1)
+                            }
+                        }
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
                     }
-                    .padding(.horizontal, 4)
+                    .padding(.top, 3)
                 }
             } compactLeading: {
                 Image(systemName: context.state.interval.systemImage)
+                    .foregroundStyle(.orange)
+                    .symbolRenderingMode(.hierarchical)
                     .accessibilityLabel(context.state.interval.title)
             } compactTrailing: {
-                RemainingTimeView(state: context.state, font: .caption.monospacedDigit())
-                    .frame(maxWidth: 48)
+                RemainingTimeView(
+                    state: context.state,
+                    font: .caption2.weight(.semibold).monospacedDigit()
+                )
+                .fixedSize(horizontal: true, vertical: false)
             } minimal: {
                 Image(systemName: context.state.interval.systemImage)
+                    .foregroundStyle(.orange)
+                    .symbolRenderingMode(.hierarchical)
                     .accessibilityLabel(context.state.interval.title)
             }
-            .keylineTint(.primary)
+            .keylineTint(.orange)
         }
     }
 }
@@ -52,38 +78,48 @@ private struct LockScreenActivityView: View {
     let context: ActivityViewContext<PomodoroActivityAttributes>
 
     var body: some View {
-        VStack(spacing: 14) {
-            HStack {
-                Label(
-                    context.state.interval.title,
-                    systemImage: context.state.interval.systemImage
-                )
-                .font(.headline)
+        VStack(spacing: 10) {
+            HStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 7) {
+                        Image(systemName: context.state.interval.systemImage)
+                            .foregroundStyle(.orange)
+                            .symbolRenderingMode(.hierarchical)
 
-                Spacer()
+                        Text(context.state.interval.title)
+                            .foregroundStyle(.primary)
+                    }
+                    .font(.headline.weight(.semibold))
 
-                Text("\(context.state.workNumber) of \(context.state.workTarget)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-
-            HStack(alignment: .firstTextBaseline) {
-                RemainingTimeView(
-                    state: context.state,
-                    font: .system(size: 42, weight: .light, design: .rounded)
-                )
-                Spacer()
-                if context.state.status == .paused {
-                    Image(systemName: "pause.fill")
+                    Text("Interval \(context.state.workNumber) of \(context.state.workTarget)")
+                        .font(.caption2.weight(.medium))
                         .foregroundStyle(.secondary)
-                        .accessibilityLabel("Paused")
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                HStack(spacing: 8) {
+                    if context.state.status == .paused {
+                        Image(systemName: "pause.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                            .accessibilityLabel("Paused")
+                    }
+
+                    RemainingTimeView(
+                        state: context.state,
+                        font: .system(size: 38, weight: .semibold, design: .rounded)
+                    )
+                    .fixedSize(horizontal: true, vertical: false)
                 }
             }
 
             ActivityProgressView(state: context.state)
         }
-        .padding()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .accessibilityElement(children: .combine)
     }
 }
@@ -130,6 +166,6 @@ private struct ActivityProgressView: View {
                 )
             }
         }
-        .tint(.primary)
+        .tint(.orange)
     }
 }

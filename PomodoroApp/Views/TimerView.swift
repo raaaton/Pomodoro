@@ -9,28 +9,28 @@ struct TimerView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Spacer(minLength: 24)
+                VStack(spacing: 22) {
+                    intervalHeader
 
-                intervalHeader
-                    .padding(.bottom, 24)
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        TimerProgressView(session: timer.session, date: context.date)
+                    }
+                    .frame(maxWidth: 310)
 
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    TimerProgressView(session: timer.session, date: context.date)
+                    CycleIndicator(
+                        current: timer.session.workNumber,
+                        total: timer.preferences.workIntervalsBeforeLongBreak
+                    )
                 }
-                .frame(maxWidth: 390)
-                .padding(.horizontal, 28)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 20)
+                .padding(.horizontal, 32)
 
-                CycleIndicator(
-                    current: timer.session.workNumber,
-                    total: timer.preferences.workIntervalsBeforeLongBreak
-                )
-                .padding(.top, 26)
-
-                Spacer(minLength: 34)
+                Spacer(minLength: 28)
 
                 controls
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 22)
+                    .padding(.bottom, 20)
             }
             .navigationTitle("Pomodoro")
             .navigationBarTitleDisplayMode(.inline)
@@ -41,6 +41,7 @@ struct TimerView: View {
                     }
                 }
             }
+            .tint(.orange)
             .sheet(isPresented: $presentsSettings) {
                 SettingsView(timer: timer)
             }
@@ -71,63 +72,84 @@ struct TimerView: View {
     }
 
     private var intervalHeader: some View {
-        Label(timer.session.interval.title, systemImage: timer.session.interval.systemImage)
-            .font(.headline)
-            .foregroundStyle(.secondary)
-            .animation(.spring(duration: 0.4), value: timer.session.interval)
+        HStack(spacing: 8) {
+            Image(systemName: timer.session.interval.systemImage)
+                .foregroundStyle(.orange)
+                .symbolRenderingMode(.hierarchical)
+
+            Text(timer.session.interval.title)
+                .foregroundStyle(.primary)
+        }
+        .font(.headline.weight(.semibold))
+        .animation(.spring(duration: 0.4), value: timer.session.interval)
     }
 
     private var controls: some View {
-        HStack(spacing: 20) {
-            if timer.session.status != .ready || timer.canSkip {
-                controlButton(
-                    title: "Stop",
-                    systemImage: "xmark",
-                    action: { confirmsReset = true }
-                )
-            } else {
-                Color.clear.frame(width: 64, height: 64)
-            }
+        HStack(spacing: 14) {
+            secondaryControlButton(
+                title: "Stop",
+                systemImage: "xmark",
+                isVisible: timer.session.status != .ready || timer.canSkip,
+                action: { confirmsReset = true }
+            )
 
             primaryButton
 
-            if timer.session.status != .ready {
-                controlButton(
-                    title: "Skip",
-                    systemImage: "forward.end.fill",
-                    action: timer.skip
-                )
-            } else {
-                Color.clear.frame(width: 64, height: 64)
-            }
+            secondaryControlButton(
+                title: "Skip",
+                systemImage: "forward.end.fill",
+                isVisible: timer.session.status != .ready,
+                action: timer.skip
+            )
         }
+        .frame(maxWidth: 340)
         .frame(maxWidth: .infinity)
+        .animation(.snappy(duration: 0.3), value: timer.session.status)
     }
 
     private var primaryButton: some View {
         Button(action: primaryAction) {
-            Image(systemName: timer.session.status == .running ? "pause.fill" : "play.fill")
-                .font(.title2.weight(.semibold))
-                .frame(width: 82, height: 82)
+            Label(primaryTitle, systemImage: primarySystemImage)
+                .font(.headline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 56)
         }
         .buttonStyle(.glassProminent)
-        .buttonBorderShape(.circle)
-        .accessibilityLabel(timer.session.status == .running ? "Pause" : "Start")
+        .buttonBorderShape(.capsule)
+        .tint(.orange)
+        .accessibilityLabel(primaryTitle)
+        .frame(maxWidth: 172)
     }
 
-    private func controlButton(
+    private func secondaryControlButton(
         title: String,
         systemImage: String,
+        isVisible: Bool,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.body.weight(.semibold))
-                .frame(width: 64, height: 64)
+                .frame(width: 50, height: 50)
         }
         .buttonStyle(.glass)
         .buttonBorderShape(.circle)
         .accessibilityLabel(title)
+        .opacity(isVisible ? 1 : 0)
+        .allowsHitTesting(isVisible)
+        .accessibilityHidden(!isVisible)
+        .frame(width: 50)
+    }
+
+    private var primaryTitle: String {
+        switch timer.session.status {
+        case .ready: "Start"
+        case .running: "Pause"
+        case .paused: "Resume"
+        }
+    }
+
+    private var primarySystemImage: String {
+        timer.session.status == .running ? "pause.fill" : "play.fill"
     }
 
     private func primaryAction() {

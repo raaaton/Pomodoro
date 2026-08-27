@@ -79,7 +79,7 @@ jobs:
           fi
 
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "ipa=Artifacts/Pomodoro-${VERSION}-unsigned.ipa" >> "$GITHUB_OUTPUT"
+          echo "ipa=Artifacts/Pomodoro-${VERSION}.ipa" >> "$GITHUB_OUTPUT"
 
       - name: Verify toolchain and project
         run: |
@@ -134,7 +134,7 @@ jobs:
       - name: Preserve verified IPA as workflow artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Pomodoro-${{ inputs.version }}-unsigned
+          name: Pomodoro-${{ inputs.version }}
           path: |
             ${{ steps.metadata.outputs.ipa }}
             ${{ steps.metadata.outputs.ipa }}.sha256

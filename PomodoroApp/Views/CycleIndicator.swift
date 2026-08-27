@@ -5,20 +5,21 @@ struct CycleIndicator: View {
     let total: Int
 
     var body: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 7) {
-                ForEach(1...total, id: \.self) { position in
-                    Circle()
-                        .fill(position <= current ? AnyShapeStyle(.primary) : AnyShapeStyle(.quaternary))
-                        .frame(width: 6, height: 6)
-                }
+        HStack(spacing: 6) {
+            ForEach(1...total, id: \.self) { position in
+                Capsule()
+                    .fill(fillStyle(for: position))
+                    .frame(width: position == current ? 18 : 6, height: 6)
             }
-            Text("\(current) of \(total)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
         }
+        .animation(.snappy(duration: 0.35), value: current)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Focus interval \(current) of \(total)")
+    }
+
+    private func fillStyle(for position: Int) -> Color {
+        if position == current { return .orange }
+        if position < current { return .orange.opacity(0.42) }
+        return .secondary.opacity(0.2)
     }
 }

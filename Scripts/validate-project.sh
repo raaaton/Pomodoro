@@ -84,6 +84,13 @@ grep -q 'BlueprintName="Pomodoro"' "$scheme"
 grep -q 'workflow_dispatch:' .github/workflows/release.yml
 grep -q 'gh release create' .github/workflows/release.yml
 grep -q 'package-unsigned-ipa.sh' .github/workflows/build.yml
+grep -Fq 'Artifacts/Pomodoro-${version}.ipa' .github/workflows/build.yml
+grep -Fq 'Artifacts/Pomodoro-${VERSION}.ipa' .github/workflows/release.yml
+
+if grep -q -- '-unsigned\.ipa' .github/workflows/build.yml .github/workflows/release.yml; then
+    echo "Workflow IPA filenames must use Pomodoro-X.X.X.ipa." >&2
+    exit 1
+fi
 
 while IFS= read -r source; do
     basename="$(basename "$source")"

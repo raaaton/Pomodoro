@@ -10,24 +10,24 @@ struct TimerProgressView: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(.quaternary, lineWidth: 8)
+                .stroke(.secondary.opacity(0.14), lineWidth: 5)
 
             Circle()
-                .trim(from: 0, to: max(0.002, progress))
+                .trim(from: 0, to: progress)
                 .stroke(
-                    .primary,
-                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                    Color.orange,
+                    style: StrokeStyle(lineWidth: 6, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
                 .animation(.smooth(duration: 0.45), value: progress)
 
             Text(Self.formatted(session.remaining(at: date)))
-                .font(.system(size: 62, weight: .thin, design: .rounded))
+                .font(.system(size: 64, weight: .medium, design: .rounded))
                 .monospacedDigit()
                 .contentTransition(.numericText(countsDown: true))
-                .minimumScaleFactor(0.65)
+                .minimumScaleFactor(0.72)
                 .lineLimit(1)
-                .padding(36)
+                .padding(32)
                 .accessibilityLabel("Time remaining")
                 .accessibilityValue(Self.spoken(session.remaining(at: date)))
         }
