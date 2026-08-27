@@ -64,7 +64,7 @@ struct SettingsView: View {
                     )
                 }
 
-                Section("Alerts") {
+                Section {
                     Toggle(
                         "Notifications",
                         isOn: Binding(
@@ -77,6 +77,8 @@ struct SettingsView: View {
                             }
                         )
                     )
+                } header: {
+                    Text("Alerts")
                 } footer: {
                     Text("Pomodoro uses notifications and haptics to mark the end of each interval.")
                 }
