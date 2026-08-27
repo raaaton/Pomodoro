@@ -7,19 +7,12 @@ struct PomodoroLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PomodoroActivityAttributes.self) { context in
             LockScreenActivityView(context: context)
-                .activityBackgroundTint(.clear)
-                .activitySystemActionForegroundColor(.primary)
+                .activityBackgroundTint(.black.opacity(0.88))
+                .activitySystemActionForegroundColor(.orange)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 6) {
-                        Image(systemName: context.state.interval.systemImage)
-                            .symbolRenderingMode(.hierarchical)
-                        Text(context.state.interval.title)
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.orange)
-                    .lineLimit(1)
+                    PhaseGlyph(interval: context.state.interval, font: .title3)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
@@ -27,47 +20,42 @@ struct PomodoroLiveActivity: Widget {
                         state: context.state,
                         font: .system(size: 28, weight: .semibold, design: .rounded)
                     )
-                    .fixedSize(horizontal: true, vertical: false)
+                    .foregroundStyle(.white)
+                    .frame(width: 88, alignment: .trailing)
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 8) {
-                        ActivityProgressView(state: context.state)
-
+                    VStack(spacing: 7) {
                         HStack(spacing: 8) {
-                            Text("Interval \(context.state.workNumber) of \(context.state.workTarget)")
-                                .monospacedDigit()
+                            Text(context.state.interval.title)
+                                .fontWeight(.semibold)
                                 .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: false)
 
                             Spacer(minLength: 8)
 
-                            if context.state.status == .paused {
-                                Label("Paused", systemImage: "pause.fill")
-                                    .lineLimit(1)
-                            }
+                            CyclePositionView(
+                                current: context.state.workNumber,
+                                total: context.state.workTarget
+                            )
                         }
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.72))
+
+                        ActivityProgressView(state: context.state)
                     }
-                    .padding(.top, 3)
+                    .padding(.top, 2)
                 }
             } compactLeading: {
-                Image(systemName: context.state.interval.systemImage)
-                    .foregroundStyle(.orange)
-                    .symbolRenderingMode(.hierarchical)
-                    .accessibilityLabel(context.state.interval.title)
+                PhaseGlyph(interval: context.state.interval, font: .body)
             } compactTrailing: {
                 RemainingTimeView(
                     state: context.state,
                     font: .caption2.weight(.semibold).monospacedDigit()
                 )
-                .fixedSize(horizontal: true, vertical: false)
+                .foregroundStyle(.white)
+                .frame(width: 42, alignment: .trailing)
             } minimal: {
-                Image(systemName: context.state.interval.systemImage)
-                    .foregroundStyle(.orange)
-                    .symbolRenderingMode(.hierarchical)
-                    .accessibilityLabel(context.state.interval.title)
+                PhaseGlyph(interval: context.state.interval, font: .body)
             }
             .keylineTint(.orange)
         }
@@ -79,40 +67,40 @@ private struct LockScreenActivityView: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            HStack(alignment: .center, spacing: 16) {
+            HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 7) {
-                        Image(systemName: context.state.interval.systemImage)
-                            .foregroundStyle(.orange)
-                            .symbolRenderingMode(.hierarchical)
+                        PhaseGlyph(interval: context.state.interval, font: .headline)
 
                         Text(context.state.interval.title)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                     }
                     .font(.headline.weight(.semibold))
 
-                    Text("Interval \(context.state.workNumber) of \(context.state.workTarget)")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                        .lineLimit(1)
+                    CyclePositionView(
+                        current: context.state.workNumber,
+                        total: context.state.workTarget
+                    )
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.64))
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 12)
 
                 HStack(spacing: 8) {
                     if context.state.status == .paused {
                         Image(systemName: "pause.fill")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.64))
                             .accessibilityLabel("Paused")
                     }
 
                     RemainingTimeView(
                         state: context.state,
-                        font: .system(size: 38, weight: .semibold, design: .rounded)
+                        font: .system(size: 36, weight: .semibold, design: .rounded)
                     )
-                    .fixedSize(horizontal: true, vertical: false)
+                    .foregroundStyle(.white)
+                    .frame(width: 108, alignment: .trailing)
                 }
             }
 
@@ -130,9 +118,9 @@ private struct RemainingTimeView: View {
 
     var body: some View {
         Group {
-            if state.status == .running, let endsAt = state.endsAt {
+            if let range = runningRange {
                 Text(
-                    timerInterval: state.startedAt...endsAt,
+                    timerInterval: range,
                     countsDown: true,
                     showsHours: false
                 )
@@ -146,6 +134,15 @@ private struct RemainingTimeView: View {
         .minimumScaleFactor(0.7)
     }
 
+    private var runningRange: ClosedRange<Date>? {
+        guard state.status == .running,
+              let endsAt = state.endsAt,
+              endsAt > state.startedAt else {
+            return nil
+        }
+        return state.startedAt...endsAt
+    }
+
     private static func formatted(_ interval: TimeInterval) -> String {
         let seconds = max(0, Int(ceil(interval)))
         return String(format: "%02d:%02d", seconds / 60, seconds % 60)
@@ -157,8 +154,8 @@ private struct ActivityProgressView: View {
 
     var body: some View {
         Group {
-            if state.status == .running, let endsAt = state.endsAt {
-                ProgressView(timerInterval: state.startedAt...endsAt, countsDown: false)
+            if let range = runningRange {
+                ProgressView(timerInterval: range, countsDown: false)
             } else {
                 ProgressView(
                     value: max(0, state.totalDuration - state.pausedRemaining),
@@ -167,5 +164,40 @@ private struct ActivityProgressView: View {
             }
         }
         .tint(.orange)
+    }
+
+    private var runningRange: ClosedRange<Date>? {
+        guard state.status == .running,
+              let endsAt = state.endsAt,
+              endsAt > state.startedAt else {
+            return nil
+        }
+        return state.startedAt...endsAt
+    }
+}
+
+private struct PhaseGlyph: View {
+    let interval: PomodoroIntervalKind
+    let font: Font
+
+    var body: some View {
+        Image(systemName: interval.systemImage)
+            .font(font)
+            .foregroundStyle(.orange)
+            .symbolRenderingMode(.hierarchical)
+            .accessibilityLabel(interval.title)
+    }
+}
+
+private struct CyclePositionView: View {
+    let current: Int
+    let total: Int
+
+    var body: some View {
+        Text("Interval \(current) of \(total)")
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .accessibilityLabel("Focus interval \(current) of \(total)")
     }
 }
