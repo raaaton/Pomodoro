@@ -44,7 +44,7 @@ CI additionally runs the unit tests on an iOS 27 simulator. Batch changes before
 
 ## IPA artifacts and releases
 
-Every successful build of `main` produces an **unsigned IPA** as a GitHub Actions artifact. The artifact is retained for 14 days and contains both `Pomodoro.app` and the embedded Live Activity extension.
+Every successful build of `main` produces an unsigned `Pomodoro-X.X.X.ipa` as a GitHub Actions artifact. The artifact is retained for 14 days and contains both `Pomodoro.app` and the embedded Live Activity extension.
 
 Releases are deliberately manual. Run the **Release IPA** workflow from `main`, enter an unused version in `X.X.X` format, and check the confirmation box. The workflow then:
 
@@ -58,4 +58,4 @@ Releases are deliberately manual. Run the **Release IPA** workflow from `main`, 
 
 No tag or release is created if testing or compilation fails. CI cannot determine whether a build has a functional or product bug, so the explicit manual confirmation is the release gate.
 
-The generated IPA is unsigned because this public repository contains no Apple distribution certificate or provisioning profile. It cannot be installed directly on a standard iPhone; sign it with a compatible tool and profile first. A fully signed CI release requires private GitHub secrets containing Apple signing credentials.
+The generated IPA is unsigned because this public repository contains no paid Apple Developer distribution certificate or provisioning profile. It is intended to be re-signed with a free Apple ID by a sideloading tool such as SideStore before installation. A fully signed CI release would require private Apple signing credentials.
