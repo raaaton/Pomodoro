@@ -8,37 +8,32 @@ struct TimerView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                VStack(spacing: 22) {
-                    intervalHeader
+            ZStack {
+                immersiveBackground
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 56)
 
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        TimerProgressView(session: timer.session, date: context.date)
+                        TimerHeroView(
+                            session: timer.session,
+                            date: context.date,
+                            cycleTarget: timer.preferences.workIntervalsBeforeLongBreak
+                        )
                     }
-                    .frame(maxWidth: 310)
-
-                    CycleIndicator(
-                        current: timer.session.workNumber,
-                        total: timer.preferences.workIntervalsBeforeLongBreak
-                    )
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 20)
-                .padding(.horizontal, 32)
-
-                Spacer(minLength: 28)
-
-                controls
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 20)
+
+                    Spacer(minLength: 48)
+
+                    sessionControl
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 28)
+                }
             }
-            .navigationTitle("Pomodoro")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Settings", systemImage: "gearshape") {
-                        presentsSettings = true
-                    }
+                    actionsMenu
                 }
             }
             .tint(.orange)
@@ -58,6 +53,9 @@ struct TimerView: View {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { timer.sceneBecameActive() }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .pomodoroSessionDidChange)) { _ in
+                timer.reloadFromStorage()
+            }
             .task {
                 while !Task.isCancelled {
                     if timer.session.status == .running {
@@ -69,94 +67,86 @@ struct TimerView: View {
                 }
             }
         }
+        .preferredColorScheme(.dark)
     }
 
-    private var intervalHeader: some View {
-        HStack(spacing: 8) {
-            Image(systemName: timer.session.interval.systemImage)
-                .foregroundStyle(.orange)
-                .symbolRenderingMode(.hierarchical)
-
-            Text(timer.session.interval.title)
-                .foregroundStyle(.primary)
-        }
-        .font(.headline.weight(.semibold))
-        .animation(.spring(duration: 0.4), value: timer.session.interval)
-    }
-
-    private var controls: some View {
-        HStack(spacing: 14) {
-            secondaryControlButton(
-                title: "Stop",
-                systemImage: "xmark",
-                isVisible: timer.session.status != .ready || timer.canSkip,
-                action: { confirmsReset = true }
+    private var immersiveBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.067, green: 0.082, blue: 0.133),
+                    Color(red: 0.031, green: 0.039, blue: 0.063)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
 
+            RadialGradient(
+                colors: [.orange.opacity(0.075), .clear],
+                center: .center,
+                startRadius: 12,
+                endRadius: 270
+            )
+        }
+        .ignoresSafeArea()
+    }
+
+    @ViewBuilder
+    private var sessionControl: some View {
+        if timer.session.status == .ready {
             primaryButton
-
-            secondaryControlButton(
-                title: "Skip",
-                systemImage: "forward.end.fill",
-                isVisible: timer.session.status != .ready,
-                action: timer.skip
-            )
+        } else {
+            HoldToStopControl(interval: timer.session.interval) {
+                timer.reset()
+            }
         }
-        .frame(maxWidth: 340)
-        .frame(maxWidth: .infinity)
-        .animation(.snappy(duration: 0.3), value: timer.session.status)
     }
 
     private var primaryButton: some View {
-        Button(action: primaryAction) {
-            Label(primaryTitle, systemImage: primarySystemImage)
+        Button(action: timer.startOrResume) {
+            Label("Start", systemImage: "play.fill")
                 .font(.headline.weight(.semibold))
                 .frame(maxWidth: .infinity, minHeight: 56)
         }
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
         .tint(.orange)
-        .accessibilityLabel(primaryTitle)
-        .frame(maxWidth: 172)
+        .accessibilityLabel("Start")
+        .frame(maxWidth: 200)
     }
 
-    private func secondaryControlButton(
-        title: String,
-        systemImage: String,
-        isVisible: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.body.weight(.semibold))
-                .frame(width: 50, height: 50)
-        }
-        .buttonStyle(.glass)
-        .buttonBorderShape(.circle)
-        .accessibilityLabel(title)
-        .opacity(isVisible ? 1 : 0)
-        .allowsHitTesting(isVisible)
-        .accessibilityHidden(!isVisible)
-        .frame(width: 50)
-    }
+    private var actionsMenu: some View {
+        Menu {
+            if timer.session.status != .ready {
+                Button(
+                    timer.session.status == .running ? "Pause" : "Resume",
+                    systemImage: timer.session.status == .running ? "pause.fill" : "play.fill"
+                ) {
+                    if timer.session.status == .running {
+                        timer.pause()
+                    } else {
+                        timer.startOrResume()
+                    }
+                }
 
-    private var primaryTitle: String {
-        switch timer.session.status {
-        case .ready: "Start"
-        case .running: "Pause"
-        case .paused: "Resume"
-        }
-    }
+                Button("Skip", systemImage: "forward.end.fill") {
+                    timer.skip()
+                }
 
-    private var primarySystemImage: String {
-        timer.session.status == .running ? "pause.fill" : "play.fill"
-    }
+                Divider()
 
-    private func primaryAction() {
-        if timer.session.status == .running {
-            timer.pause()
-        } else {
-            timer.startOrResume()
+                Button("Reset", systemImage: "arrow.counterclockwise", role: .destructive) {
+                    confirmsReset = true
+                }
+
+                Divider()
+            }
+
+            Button("Settings", systemImage: "gearshape") {
+                presentsSettings = true
+            }
+        } label: {
+            Label("Session Actions", systemImage: "ellipsis")
         }
     }
 }

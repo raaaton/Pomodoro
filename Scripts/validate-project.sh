@@ -80,6 +80,10 @@ grep -q 'NSSupportsLiveActivities' PomodoroApp/Info.plist
 grep -q 'com.apple.widgetkit-extension' PomodoroLiveActivity/Info.plist
 grep -q 'PomodoroLiveActivity.appex in Embed App Extensions' "$project"
 grep -q 'frame(width: 42, alignment: .trailing)' PomodoroLiveActivity/PomodoroLiveActivity.swift
+grep -q 'struct EndPomodoroIntent: LiveActivityIntent' PomodoroShared/EndPomodoroIntent.swift
+grep -q 'Button(intent: EndPomodoroIntent' PomodoroLiveActivity/PomodoroLiveActivity.swift
+grep -q '\.labelsHidden()' PomodoroLiveActivity/PomodoroLiveActivity.swift
+grep -q 'minimumDuration: Self.holdDuration' PomodoroApp/Views/TimerHeroView.swift
 
 if grep -q 'fixedSize(horizontal: true' PomodoroLiveActivity/PomodoroLiveActivity.swift; then
     echo "Live Activity timer views must not request unbounded horizontal size." >&2

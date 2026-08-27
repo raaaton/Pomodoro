@@ -6,10 +6,10 @@ A deliberately small, native Pomodoro timer for iOS 27. The app uses SwiftUI, Ac
 
 - Focus, short-break, and long-break intervals
 - Configurable durations and cycle length
-- Pause, resume, skip, stop/reset, automatic transitions, and optional automatic start
+- Start plus a deliberate hold-to-stop control, with pause, resume, skip, and reset in the session menu
 - Persistent timestamp-based session state that reconciles after suspension or termination
 - Local notifications and foreground haptics
-- Lock Screen and Dynamic Island Live Activity
+- Interactive Lock Screen and Dynamic Island Live Activity with a guarded End action
 - Unit tests and a shared Xcode scheme
 - GitHub Actions build and test verification on the `xcode-27` runner
 
@@ -27,7 +27,7 @@ Open `Pomodoro.xcodeproj`, select the `Pomodoro` scheme, and run the app. Xcode 
 
 `PomodoroTimer` owns the session state and transitions. A running session persists an absolute end date rather than decrementing an in-memory counter. `NotificationManager` schedules interval alerts, and `LiveActivityManager` publishes date-driven ActivityKit content so the system renders the countdown without per-second app updates.
 
-The Live Activity is intentionally glanceable and read-only. Its compact presentation contains only an interval SF Symbol and remaining time; controls remain in the app so state, notifications, and persistence cannot diverge across processes.
+The compact Live Activity remains glanceable and contains only an interval SF Symbol and remaining time. Its Lock Screen and expanded Dynamic Island presentations expose a guarded End action through `LiveActivityIntent`; the intent verifies the session identifier before resetting persisted state, cancelling notifications, and dismissing the activity.
 
 ## Verification
 

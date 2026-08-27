@@ -68,8 +68,17 @@ final class PomodoroTimer {
     }
 
     func sceneBecameActive() {
+        reloadFromStorage()
         reconcile(at: Date(), givesFeedback: false)
         persistAndSynchronize()
+    }
+
+    func reloadFromStorage() {
+        synchronizationTask?.cancel()
+        preferences = storage.loadPreferences()
+        session = storage.loadSession() ?? .fresh(using: preferences)
+        normalizeSession()
+        reconcile(at: Date(), givesFeedback: false)
     }
 
     func updatePreferences(_ change: (inout PomodoroPreferences) -> Void) {

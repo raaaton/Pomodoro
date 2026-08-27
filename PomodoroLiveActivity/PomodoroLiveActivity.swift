@@ -1,4 +1,5 @@
 import ActivityKit
+import AppIntents
 import Foundation
 import SwiftUI
 import WidgetKit
@@ -7,43 +8,43 @@ struct PomodoroLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PomodoroActivityAttributes.self) { context in
             LockScreenActivityView(context: context)
-                .activityBackgroundTint(.black.opacity(0.88))
+                .activityBackgroundTint(
+                    Color(red: 0.031, green: 0.039, blue: 0.063).opacity(0.96)
+                )
                 .activitySystemActionForegroundColor(.orange)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    PhaseGlyph(interval: context.state.interval, font: .title3)
+                    VStack(alignment: .leading, spacing: 6) {
+                        SessionTitleView(state: context.state, font: .subheadline)
+
+                        RemainingTimeView(
+                            state: context.state,
+                            font: .system(size: 30, weight: .semibold, design: .rounded)
+                        )
+                        .foregroundStyle(.white)
+                        .frame(width: 112, alignment: .leading)
+                    }
+                    .frame(width: 142, alignment: .leading)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    RemainingTimeView(
-                        state: context.state,
-                        font: .system(size: 28, weight: .semibold, design: .rounded)
-                    )
-                    .foregroundStyle(.white)
-                    .frame(width: 88, alignment: .trailing)
+                    EndActivityButton(sessionID: context.attributes.sessionID)
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: 7) {
-                        HStack(spacing: 8) {
-                            Text(context.state.interval.title)
-                                .fontWeight(.semibold)
-                                .lineLimit(1)
-
-                            Spacer(minLength: 8)
-
-                            CyclePositionView(
-                                current: context.state.workNumber,
-                                total: context.state.workTarget
-                            )
-                        }
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.72))
-
                         ActivityProgressView(state: context.state)
+
+                        CyclePositionView(
+                            current: context.state.workNumber,
+                            total: context.state.workTarget
+                        )
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.58))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.top, 2)
+                    .padding(.top, 4)
                 }
             } compactLeading: {
                 PhaseGlyph(interval: context.state.interval, font: .body)
@@ -66,16 +67,10 @@ private struct LockScreenActivityView: View {
     let context: ActivityViewContext<PomodoroActivityAttributes>
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(alignment: .center, spacing: 12) {
+        VStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 7) {
-                        PhaseGlyph(interval: context.state.interval, font: .headline)
-
-                        Text(context.state.interval.title)
-                            .foregroundStyle(.white)
-                    }
-                    .font(.headline.weight(.semibold))
+                    SessionTitleView(state: context.state, font: .headline)
 
                     CyclePositionView(
                         current: context.state.workNumber,
@@ -85,30 +80,64 @@ private struct LockScreenActivityView: View {
                     .foregroundStyle(.white.opacity(0.64))
                 }
 
-                Spacer(minLength: 12)
+                Spacer(minLength: 4)
 
-                HStack(spacing: 8) {
-                    if context.state.status == .paused {
-                        Image(systemName: "pause.fill")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.white.opacity(0.64))
-                            .accessibilityLabel("Paused")
-                    }
+                RemainingTimeView(
+                    state: context.state,
+                    font: .system(size: 34, weight: .semibold, design: .rounded)
+                )
+                .foregroundStyle(.white)
+                .frame(width: 102, alignment: .trailing)
 
-                    RemainingTimeView(
-                        state: context.state,
-                        font: .system(size: 36, weight: .semibold, design: .rounded)
-                    )
-                    .foregroundStyle(.white)
-                    .frame(width: 108, alignment: .trailing)
-                }
+                EndActivityButton(sessionID: context.attributes.sessionID)
             }
 
             ActivityProgressView(state: context.state)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .accessibilityElement(children: .combine)
+        .padding(.vertical, 14)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+private struct SessionTitleView: View {
+    let state: PomodoroActivityAttributes.ContentState
+    let font: Font
+
+    var body: some View {
+        HStack(spacing: 7) {
+            PhaseGlyph(interval: state.interval, font: font)
+
+            Text(state.interval.title)
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+
+            if state.status == .paused {
+                Image(systemName: "pause.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel("Paused")
+            }
+        }
+        .font(font.weight(.semibold))
+    }
+}
+
+private struct EndActivityButton: View {
+    let sessionID: UUID
+
+    var body: some View {
+        Button(intent: EndPomodoroIntent(sessionID: sessionID)) {
+            Text("End")
+                .font(.subheadline.weight(.bold))
+                .frame(width: 58, height: 36)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(.orange.opacity(0.22))
+        .foregroundStyle(.orange)
+        .accessibilityLabel("End Pomodoro session")
     }
 }
 
@@ -164,6 +193,9 @@ private struct ActivityProgressView: View {
             }
         }
         .tint(.orange)
+        .progressViewStyle(.linear)
+        .labelsHidden()
+        .accessibilityLabel("Interval progress")
     }
 
     private var runningRange: ClosedRange<Date>? {

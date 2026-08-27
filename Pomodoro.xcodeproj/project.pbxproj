@@ -15,7 +15,7 @@
 		A10000000000000000000006 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* NotificationManager.swift */; };
 		A10000000000000000000007 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* LiveActivityManager.swift */; };
 		A10000000000000000000008 /* PomodoroTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* PomodoroTimer.swift */; };
-		A10000000000000000000009 /* TimerProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* TimerProgressView.swift */; };
+		A10000000000000000000009 /* TimerHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* TimerHeroView.swift */; };
 		A1000000000000000000000A /* CycleIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* CycleIndicator.swift */; };
 		A1000000000000000000000B /* TimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000B /* TimerView.swift */; };
 		A1000000000000000000000C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* SettingsView.swift */; };
@@ -26,6 +26,11 @@
 		A10000000000000000000011 /* PomodoroActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D /* PomodoroActivityAttributes.swift */; };
 		A10000000000000000000012 /* TimerSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* TimerSessionTests.swift */; };
 		A10000000000000000000013 /* PomodoroLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* PomodoroLiveActivity.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A10000000000000000000014 /* EndPomodoroIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* EndPomodoroIntent.swift */; };
+		A10000000000000000000015 /* EndPomodoroIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* EndPomodoroIntent.swift */; };
+		A10000000000000000000016 /* PomodoroPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* PomodoroPreferences.swift */; };
+		A10000000000000000000017 /* TimerSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* TimerSession.swift */; };
+		A10000000000000000000018 /* AppStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* AppStorage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,7 +73,7 @@
 		B10000000000000000000006 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		B10000000000000000000007 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		B10000000000000000000008 /* PomodoroTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PomodoroTimer.swift; sourceTree = "<group>"; };
-		B10000000000000000000009 /* TimerProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerProgressView.swift; sourceTree = "<group>"; };
+		B10000000000000000000009 /* TimerHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerHeroView.swift; sourceTree = "<group>"; };
 		B1000000000000000000000A /* CycleIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleIndicator.swift; sourceTree = "<group>"; };
 		B1000000000000000000000B /* TimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerView.swift; sourceTree = "<group>"; };
 		B1000000000000000000000C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -83,6 +88,7 @@
 		B10000000000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000016 /* Pomodoro.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Pomodoro.entitlements; sourceTree = "<group>"; };
 		B10000000000000000000017 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000000000000000000018 /* EndPomodoroIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndPomodoroIntent.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,7 +138,7 @@
 		D10000000000000000000006 /* Services */ = {isa = PBXGroup; children = (B10000000000000000000004, B10000000000000000000005, B10000000000000000000006, B10000000000000000000007, ); path = Services; sourceTree = "<group>"; };
 		D10000000000000000000007 /* ViewModels */ = {isa = PBXGroup; children = (B10000000000000000000008, ); path = ViewModels; sourceTree = "<group>"; };
 		D10000000000000000000008 /* Views */ = {isa = PBXGroup; children = (B10000000000000000000009, B1000000000000000000000A, B1000000000000000000000B, B1000000000000000000000C, ); path = Views; sourceTree = "<group>"; };
-		D10000000000000000000009 /* PomodoroShared */ = {isa = PBXGroup; children = (B1000000000000000000000D, ); path = PomodoroShared; sourceTree = "<group>"; };
+		D10000000000000000000009 /* PomodoroShared */ = {isa = PBXGroup; children = (B1000000000000000000000D, B10000000000000000000018, ); path = PomodoroShared; sourceTree = "<group>"; };
 		D1000000000000000000000A /* PomodoroLiveActivity */ = {isa = PBXGroup; children = (B1000000000000000000000F, B10000000000000000000010, B10000000000000000000017, ); path = PomodoroLiveActivity; sourceTree = "<group>"; };
 		D1000000000000000000000B /* PomodoroTests */ = {isa = PBXGroup; children = (B10000000000000000000011, ); path = PomodoroTests; sourceTree = "<group>"; };
 /* End PBXGroup section */
@@ -206,8 +212,8 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		F10000000000000000000000 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002, A10000000000000000000003, A10000000000000000000004, A10000000000000000000005, A10000000000000000000006, A10000000000000000000007, A10000000000000000000008, A10000000000000000000009, A1000000000000000000000A, A1000000000000000000000B, A1000000000000000000000C, A1000000000000000000000D, ); runOnlyForDeploymentPostprocessing = 0; };
-		F10000000000000000000003 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000F, A10000000000000000000010, A10000000000000000000011, ); runOnlyForDeploymentPostprocessing = 0; };
+		F10000000000000000000000 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002, A10000000000000000000003, A10000000000000000000004, A10000000000000000000005, A10000000000000000000006, A10000000000000000000007, A10000000000000000000008, A10000000000000000000009, A1000000000000000000000A, A1000000000000000000000B, A1000000000000000000000C, A1000000000000000000000D, A10000000000000000000014, ); runOnlyForDeploymentPostprocessing = 0; };
+		F10000000000000000000003 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000F, A10000000000000000000010, A10000000000000000000011, A10000000000000000000015, A10000000000000000000016, A10000000000000000000017, A10000000000000000000018, ); runOnlyForDeploymentPostprocessing = 0; };
 		F10000000000000000000007 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000012, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 

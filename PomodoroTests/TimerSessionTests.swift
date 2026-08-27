@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import Pomodoro
 
@@ -45,5 +46,44 @@ final class TimerSessionTests: XCTestCase {
         XCTAssertEqual(preferences.duration(for: .work), 2_400)
         XCTAssertEqual(preferences.duration(for: .shortBreak), 420)
         XCTAssertEqual(preferences.duration(for: .longBreak), 1_320)
+    }
+
+    func testEndPolicyResetsMatchingSessionToFirstFocus() {
+        var preferences = PomodoroPreferences.default
+        preferences.workMinutes = 42
+        var session = TimerSession.fresh(using: preferences)
+        session.status = .running
+        session.interval = .shortBreak
+        session.workNumber = 3
+
+        let reset = PomodoroSessionEndPolicy.resetSession(
+            session,
+            requestedID: session.id,
+            preferences: preferences
+        )
+
+        XCTAssertEqual(reset?.status, .ready)
+        XCTAssertEqual(reset?.interval, .work)
+        XCTAssertEqual(reset?.workNumber, 1)
+        XCTAssertEqual(reset?.pausedRemaining, 42 * 60)
+        XCTAssertNotEqual(reset?.id, session.id)
+    }
+
+    func testEndPolicyIgnoresStaleLiveActivity() {
+        let session = TimerSession.fresh(using: .default)
+
+        let reset = PomodoroSessionEndPolicy.resetSession(
+            session,
+            requestedID: UUID(),
+            preferences: .default
+        )
+
+        XCTAssertNil(reset)
+    }
+
+    func testHeroTimerFormattingRoundsUpRemainingSecond() {
+        XCTAssertEqual(TimerHeroView.formatted(60.01), "01:01")
+        XCTAssertEqual(TimerHeroView.formatted(0), "00:00")
+        XCTAssertEqual(TimerHeroView.formatted(-5), "00:00")
     }
 }
