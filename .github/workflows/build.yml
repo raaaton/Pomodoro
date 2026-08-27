@@ -58,3 +58,34 @@ jobs:
             -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             test
+
+      - name: Build unsigned iPhone app
+        if: github.event_name != 'pull_request'
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Pomodoro.xcodeproj \
+            -scheme Pomodoro \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath DeviceDerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
+            clean build
+
+      - name: Package unsigned IPA
+        if: github.event_name != 'pull_request'
+        run: |
+          short_sha="${GITHUB_SHA:0:7}"
+          ./Scripts/package-unsigned-ipa.sh \
+            DeviceDerivedData/Build/Products/Release-iphoneos/Pomodoro.app \
+            "Artifacts/Pomodoro-main-${short_sha}-unsigned.ipa"
+
+      - name: Upload unsigned IPA
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pomodoro-main-${{ github.sha }}-unsigned
+          path: Artifacts/*.ipa
+          if-no-files-found: error
+          retention-days: 14

@@ -41,3 +41,21 @@ xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro \
 ```
 
 CI additionally runs the unit tests on an iOS 27 simulator. Batch changes before pushing; use the workflow as the final compile authority rather than triggering it after every small edit.
+
+## IPA artifacts and releases
+
+Every successful build of `main` produces an **unsigned IPA** as a GitHub Actions artifact. The artifact is retained for 14 days and contains both `Pomodoro.app` and the embedded Live Activity extension.
+
+Releases are deliberately manual. Run the **Release IPA** workflow from `main`, enter an unused version in `X.X.X` format, and check the confirmation box. The workflow then:
+
+1. rejects malformed, duplicate, or non-increasing versions;
+2. runs the complete iOS 27 test suite;
+3. builds and validates the iPhone app and embedded extension;
+4. packages the IPA and SHA-256 checksum;
+5. updates every Xcode target to the requested version and an automatic build number;
+6. atomically pushes the version commit and `vX.X.X` tag;
+7. publishes a GitHub release with generated notes and the verified IPA.
+
+No tag or release is created if testing or compilation fails. CI cannot determine whether a build has a functional or product bug, so the explicit manual confirmation is the release gate.
+
+The generated IPA is unsigned because this public repository contains no Apple distribution certificate or provisioning profile. It cannot be installed directly on a standard iPhone; sign it with a compatible tool and profile first. A fully signed CI release requires private GitHub secrets containing Apple signing credentials.

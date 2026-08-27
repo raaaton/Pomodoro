@@ -8,6 +8,18 @@ icon="PomodoroApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
 test -f "$project"
 test -f "$scheme"
 test -f "$icon"
+test -x Scripts/package-unsigned-ipa.sh
+test -x Scripts/set-version.py
+test -f .github/workflows/release.yml
+
+bash -n Scripts/package-unsigned-ipa.sh Scripts/validate-project.sh
+
+python3 - <<'PY'
+import ast
+from pathlib import Path
+
+ast.parse(Path("Scripts/set-version.py").read_text())
+PY
 
 python3 - <<'PY'
 import plistlib
@@ -33,6 +45,24 @@ python3 -m json.tool PomodoroApp/Assets.xcassets/Contents.json >/dev/null
 python3 -m json.tool PomodoroApp/Assets.xcassets/AccentColor.colorset/Contents.json >/dev/null
 python3 -m json.tool PomodoroApp/Assets.xcassets/AppIcon.appiconset/Contents.json >/dev/null
 
+python3 - <<'PY'
+import re
+from pathlib import Path
+
+text = Path("Pomodoro.xcodeproj/project.pbxproj").read_text()
+marketing = re.findall(r"MARKETING_VERSION = ([^;]+);", text)
+builds = re.findall(r"CURRENT_PROJECT_VERSION = ([^;]+);", text)
+
+if not marketing or len(set(marketing)) != 1:
+    raise SystemExit(f"MARKETING_VERSION values are missing or inconsistent: {marketing}")
+if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", marketing[0]):
+    raise SystemExit(f"MARKETING_VERSION is not X.X.X: {marketing[0]}")
+if not builds or len(set(builds)) != 1:
+    raise SystemExit(f"CURRENT_PROJECT_VERSION values are missing or inconsistent: {builds}")
+if not re.fullmatch(r"[1-9][0-9]*", builds[0]):
+    raise SystemExit(f"CURRENT_PROJECT_VERSION is not a positive integer: {builds[0]}")
+PY
+
 if command -v identify >/dev/null 2>&1; then
     dimensions="$(identify -format '%wx%h' "$icon")"
     test "$dimensions" = "1024x1024"
@@ -51,6 +81,9 @@ grep -q 'com.apple.widgetkit-extension' PomodoroLiveActivity/Info.plist
 grep -q 'PomodoroLiveActivity.appex in Embed App Extensions' "$project"
 grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 27.0' "$project"
 grep -q 'BlueprintName="Pomodoro"' "$scheme"
+grep -q 'workflow_dispatch:' .github/workflows/release.yml
+grep -q 'gh release create' .github/workflows/release.yml
+grep -q 'package-unsigned-ipa.sh' .github/workflows/build.yml
 
 while IFS= read -r source; do
     basename="$(basename "$source")"

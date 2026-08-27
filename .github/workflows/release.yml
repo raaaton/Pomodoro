@@ -1,0 +1,182 @@
+name: Release IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release in X.X.X format
+        required: true
+        type: string
+      confirmed:
+        description: I confirm this version is ready to release
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pomodoro-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: ${{ inputs.confirmed }}
+    runs-on: xcode-27
+    timeout-minutes: 40
+
+    env:
+      VERSION: ${{ inputs.version }}
+      BUILD_NUMBER: ${{ github.run_number }}
+
+    steps:
+      - name: Check out main with tags
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate release request
+        id: metadata
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version must use X.X.X format, received: $VERSION" >&2
+            exit 1
+          fi
+          if [[ "$VERSION" = "0.0.0" ]]; then
+            echo "Version 0.0.0 is reserved for unreleased builds." >&2
+            exit 1
+          fi
+
+          tag="v${VERSION}"
+          if git rev-parse --verify --quiet "refs/tags/${tag}"; then
+            echo "Tag already exists: $tag" >&2
+            exit 1
+          fi
+
+          latest_tag="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | head -n 1 || true)"
+          if [[ -n "$latest_tag" ]]; then
+            python3 - "$latest_tag" "$tag" <<'PY'
+          import re
+          import sys
+
+          def value(tag: str) -> tuple[int, int, int]:
+              match = re.fullmatch(r"v([0-9]+)\.([0-9]+)\.([0-9]+)", tag)
+              if match is None:
+                  raise SystemExit(f"invalid release tag: {tag}")
+              return tuple(map(int, match.groups()))
+
+          previous, requested = map(value, sys.argv[1:])
+          if requested <= previous:
+              raise SystemExit(
+                  f"requested version {sys.argv[2]} must be newer than {sys.argv[1]}"
+              )
+          PY
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "ipa=Artifacts/Pomodoro-${VERSION}-unsigned.ipa" >> "$GITHUB_OUTPUT"
+
+      - name: Verify toolchain and project
+        run: |
+          set -euxo pipefail
+          xcodebuild -version
+          test "$(xcrun --sdk iphoneos --show-sdk-version | cut -d. -f1)" = "27"
+          ./Scripts/validate-project.sh
+          xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -list
+
+      - name: Run unit tests before release
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Pomodoro.xcodeproj \
+            -scheme Pomodoro \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+            -derivedDataPath ReleaseDerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            clean test
+
+      - name: Build unsigned iPhone release
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Pomodoro.xcodeproj \
+            -scheme Pomodoro \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ReleaseDeviceDerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            clean build
+
+      - name: Verify and package IPA
+        env:
+          IPA_PATH: ${{ steps.metadata.outputs.ipa }}
+        run: |
+          set -euo pipefail
+          app="ReleaseDeviceDerivedData/Build/Products/Release-iphoneos/Pomodoro.app"
+          app_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")"
+          app_build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")"
+          test "$app_version" = "$VERSION"
+          test "$app_build" = "$BUILD_NUMBER"
+
+          ./Scripts/package-unsigned-ipa.sh "$app" "$IPA_PATH"
+          shasum -a 256 "$IPA_PATH" > "${IPA_PATH}.sha256"
+
+      - name: Preserve verified IPA as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pomodoro-${{ inputs.version }}-unsigned
+          path: |
+            ${{ steps.metadata.outputs.ipa }}
+            ${{ steps.metadata.outputs.ipa }}.sha256
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Record released version
+        run: |
+          set -euo pipefail
+          ./Scripts/set-version.py "$VERSION" "$BUILD_NUMBER"
+          ./Scripts/validate-project.sh
+          git diff --check
+
+      - name: Ensure verified source is still current
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+
+      - name: Commit version and push tag atomically
+        env:
+          TAG: ${{ steps.metadata.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -- Pomodoro.xcodeproj/project.pbxproj
+          git commit -m "chore: release ${TAG} [skip ci]"
+          git tag -a "$TAG" -m "Pomodoro ${VERSION}"
+          git push --atomic origin HEAD:main "refs/tags/${TAG}"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.metadata.outputs.tag }}
+          IPA_PATH: ${{ steps.metadata.outputs.ipa }}
+        run: |
+          gh release create "$TAG" \
+            "$IPA_PATH#Unsigned IPA — requires signing before installation" \
+            "${IPA_PATH}.sha256#SHA-256 checksum" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --generate-notes \
+            --notes "This IPA contains the Pomodoro app and Live Activity extension. It is unsigned and must be signed with a compatible Apple provisioning profile before installation." \
+            --title "Pomodoro ${VERSION}"
