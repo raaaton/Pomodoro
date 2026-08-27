@@ -1,0 +1,28 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# macOS
+.DS_Store
+
+# CI and local artifacts
+*.xcresult
+*.ipa
+*.dSYM.zip
+*.app.dSYM
+
+# Secrets
+*.mobileprovision
+*.p12
+*.cer
+*.env
+.env.*

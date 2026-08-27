@@ -1,0 +1,60 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: xcode-27
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Verify toolchain
+        run: |
+          set -euxo pipefail
+          xcodebuild -version
+          swift --version
+          test "$(xcrun --sdk iphoneos --show-sdk-version | cut -d. -f1)" = "27"
+
+      - name: Validate repository structure
+        run: ./Scripts/validate-project.sh
+
+      - name: Inspect project and shared scheme
+        run: xcodebuild -project Pomodoro.xcodeproj -scheme Pomodoro -list
+
+      - name: Build app and Live Activity extension
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Pomodoro.xcodeproj \
+            -scheme Pomodoro \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            clean build
+
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Pomodoro.xcodeproj \
+            -scheme Pomodoro \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            test
