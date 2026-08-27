@@ -8,6 +8,7 @@ struct PomodoroApp: App {
     var body: some Scene {
         WindowGroup {
             TimerView()
+                .preferredColorScheme(.dark)
         }
     }
 }

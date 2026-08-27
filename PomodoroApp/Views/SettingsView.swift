@@ -91,6 +91,7 @@ struct SettingsView: View {
                 }
             }
         }
+        .preferredColorScheme(.dark)
     }
 
     private func minuteStepper(
